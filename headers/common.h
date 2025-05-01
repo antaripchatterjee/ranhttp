@@ -21,7 +21,7 @@
 #define FILE_LINE_INFO_FMT "%s:%d: "
 #define FILE_LINE_INFO_ARGS __FILE__, __LINE__
 #else
-#define FILE_LINE_INFO_FMT ""
+#define FILE_LINE_INFO_FMT
 #define FILE_LINE_INFO_ARGS
 #endif // DEBUG_LEVEL >= 100
 
