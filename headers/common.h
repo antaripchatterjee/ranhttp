@@ -17,9 +17,9 @@
 #endif // DEBUG_LEVEL
 
 #if defined(DEBUG_MODE) && DEBUG_MODE >= DEBUG_LEVEL
-#if DEBUG_LEVEL >= 100
+#if DEBUG_LEVEL < 100
 #define FILE_LINE_INFO_FMT "%s:%d: "
-#define FILE_LINE_INFO_ARGS __FILE__, __LINE__
+#define FILE_LINE_INFO_ARGS ,__FILE__,__LINE__
 #else
 #define FILE_LINE_INFO_FMT
 #define FILE_LINE_INFO_ARGS
@@ -28,7 +28,7 @@
 #include <stdio.h>
 #define DEBUG_LOG(fmt, ...) \
     do { \
-        fprintf(stderr, "[DEBUG%d] " FILE_LINE_INFO_FMT fmt "\n", DEBUG_LEVEL, FILE_LINE_INFO_ARGS __VA_OPT__(,) ##__VA_ARGS__); \
+        fprintf(stderr, "[DEBUG%d] " FILE_LINE_INFO_FMT fmt "\n", DEBUG_LEVEL FILE_LINE_INFO_ARGS __VA_OPT__(,) ##__VA_ARGS__); \
     } while (0)
 #else
 #define DEBUG_LOG(fmt, ...)
