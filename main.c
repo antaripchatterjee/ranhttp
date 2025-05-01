@@ -1,4 +1,4 @@
-#define DEBUG_LEVEL 4
+#define DEBUG_LEVEL 100
 #include "request-parser/main.h"
 
 int main() {
