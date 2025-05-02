@@ -21,6 +21,9 @@ ranhttp__request_parser_error_t ranhttp__request_init(ranhttp__request_t *reques
 DLLEXPORT
 ranhttp__request_parser_error_t ranhttp__request_parse_from_buffer(ranhttp__request_t *request, const char* buf);
 
+DLLEXPORT
+ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_t *request, int fd);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

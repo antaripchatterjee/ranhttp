@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "request-parser/main.h"
 #include "request-parser/@util.h"
 
@@ -207,4 +208,95 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_buffer(ranhttp__requ
     // Free the buffer
     free(r_buffer);
     return error;
+}
+
+
+ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_t *request, int fd) {
+    if(!request) {
+        return RANHTTP_REQUEST_PARSER_ERROR_INVALID_POINTER;
+    }
+    if(fd < 0) {
+        return RANHTTP_REQUEST_PARSER_ERROR_INVALID_FD;
+    }
+    char buffer[RANHTTP_REQUEST_READER_BUFFER_SIZE+1];
+    size_t data_size = 0, allocated_space = RANHTTP_REQUEST_READER_BUFFER_SIZE+1;
+    char* data = (char*) malloc(allocated_space*sizeof(char));
+    if(!data) {
+        return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+    }
+    memset(data, 0, allocated_space);
+    int bytes_read = 0;
+    int parsing_stage = 0; // 0: request line, 1,2: headers, 3: payload
+    char last_char = '\0';
+    while(1) {
+        // memset(buffer, 0, sizeof(buffer));
+        bytes_read = read(fd, buffer, RANHTTP_REQUEST_READER_BUFFER_SIZE);
+        buffer[bytes_read] = '\0';
+        if (bytes_read < 0) {
+            free(data);
+            return RANHTTP_REQUEST_PARSER_ERROR_READ_FAILED;
+        } else if (bytes_read == 0) {
+            // process the data
+            break; // End of file
+        }
+        if(last_char == '\r' && buffer[0] == '\n') {
+            data[data_size] = '\0';
+            // process the data
+            // clean the data and reset data_size
+            memcpy(buffer, buffer + 1, --bytes_read);
+            buffer[bytes_read] = '\0';
+        }
+        if(bytes_read > 0) {
+            char* start = buffer;
+            size_t bytes_remained = bytes_read;
+            do {
+                char* end = strstr(start, "\r\n");
+                if(end) {
+                    size_t data_delta_len = end - start;
+                    if(data_delta_len > 0) {
+                        if ((data_size + data_delta_len) > allocated_space) {
+                            allocated_space = data_delta_len + 1;
+                            data = (char*) realloc(data, allocated_space);
+                            if(!data) {
+                                return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                            }
+                        }
+                        strncpy(data+data_size, start, data_delta_len);
+                        data_size += data_delta_len;
+                        data[data_delta_len] = '\0';
+                    }
+                    start = end + 2;
+                    bytes_remained -= (data_delta_len + 2);
+                    if(parsing_stage == 0) {
+                        // pocess the first data
+                        DEBUG_LOG("Request line: %s\n", data);
+                        parsing_stage = 1;
+                        memset(data, 0, allocated_space);
+                        data_size = 0;
+                    } else if(parsing_stage == 1 || parsing_stage == 2) {
+                        // process the headers
+                        DEBUG_LOG("Header data: %s\n", data);
+                        parsing_stage = 2;
+                        memset(data, 0, allocated_space);
+                        data_size = 0;
+                    }
+                } else if(bytes_remained > 0) {
+                    if((data_size + bytes_remained) > allocated_space) {
+                        allocated_space += RANHTTP_REQUEST_READER_BUFFER_SIZE;
+                        data = (char*) realloc(data, allocated_space);
+                        if(!data) {
+                            return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                        }
+                    }
+                    strncpy(data + data_size, start, bytes_remained);
+                    data_size += bytes_remained;
+                    data[data_size] = '\0';
+                    bytes_remained = 0;
+                }
+            } while(bytes_remained > 0);
+        }
+        last_char = buffer[bytes_read - 1];
+    }
+    free(data);
+    return RANHTTP_REQUEST_PARSER_ERROR_NONE;
 }
