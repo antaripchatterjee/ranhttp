@@ -218,6 +218,7 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
     if(fd < 0) {
         return RANHTTP_REQUEST_PARSER_ERROR_INVALID_FD;
     }
+
     char buffer[RANHTTP_REQUEST_READER_BUFFER_SIZE+1];
     size_t data_size = 0, allocated_space = RANHTTP_REQUEST_READER_BUFFER_SIZE+1;
     char* data = (char*) malloc(allocated_space*sizeof(char));
@@ -229,7 +230,6 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
     int parsing_stage = 0; // 0: request line, 1,2: headers, 3: payload
     char last_char = '\0';
     while(1) {
-        // memset(buffer, 0, sizeof(buffer));
         bytes_read = read(fd, buffer, RANHTTP_REQUEST_READER_BUFFER_SIZE);
         buffer[bytes_read] = '\0';
         if (bytes_read < 0) {

@@ -2,6 +2,10 @@
 
 #include "request-parser/main.h"
 #include "test-helper.h"
+#include <fcntl.h>
+#include <unistd.h>
+
+#define TEST_FILE_PATH "test/test__request_parser.txt"
 
 #define TEST_BUFFER "GET /path?param1=value1&param2=value2 HTTP/1.1\r\n" \
     "Host: example.com\r\n" \
@@ -37,10 +41,22 @@ void test__ranhttp__request_parse_from_buffer(ranhttp__request_t *request, const
     TEST_ENDED;
 }
 
+void test__ranhttp__request_parse_from_fd(ranhttp__request_t *request) {
+    TEST_STARTED;
+    int fd = open(TEST_FILE_PATH, O_RDONLY);
+    DEBUG_LOG("fd: %d\n", fd);
+    TEST_ASSERT(fd >= 0);
+    int result = ranhttp__request_parse_from_fd(request, fd);
+    TEST_ASSERT(result == RANHTTP_REQUEST_PARSER_ERROR_NONE);
+    close(fd);
+    TEST_ENDED;
+}
+
 int main() {
     ranhttp__request_t request;
     test__ranhttp__request_init(&request);
     test__ranhttp__request_destroy(&request);
-    test__ranhttp__request_parse_from_buffer(&request, TEST_BUFFER);
+    // test__ranhttp__request_parse_from_buffer(&request, TEST_BUFFER);
+    test__ranhttp__request_parse_from_fd(&request);
     return 0;
 }
