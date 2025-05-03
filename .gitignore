@@ -2,3 +2,4 @@ bin/
 build/
 test/results/
 objects/
+log.txt
