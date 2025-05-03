@@ -221,7 +221,7 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
 
     char buffer[RANHTTP_REQUEST_READER_BUFFER_SIZE+1];
     size_t data_size = 0, allocated_space = RANHTTP_REQUEST_READER_BUFFER_SIZE+1;
-    char* data = (char*) malloc(allocated_space*sizeof(char));
+    char* data = (char*) malloc(allocated_space);
     if(!data) {
         return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
     }
@@ -239,10 +239,31 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
             // process the data
             break; // End of file
         }
+        // DEBUG_LOG("Read %d bytes: %s\n", bytes_read, buffer);
         if(last_char == '\r' && buffer[0] == '\n') {
-            data[data_size] = '\0';
-            // process the data
-            // clean the data and reset data_size
+            data[data_size-1] = '\0'; 
+            if(parsing_stage == 0) {
+                // process the first data
+                ranhttp__request_parser_error_t error = ranhttp__request_read_line_0(request, data);
+                if(error != RANHTTP_REQUEST_PARSER_ERROR_NONE) {
+                    free(data);
+                    return error;
+                }
+                DEBUG_LOG("Request line: [%s]\n", data);
+                parsing_stage = 1;
+            } else if(parsing_stage == 1 || parsing_stage == 2) {
+                if(data[0] == '\0') {
+                    // Empty data indicates end of headers
+                    parsing_stage = 3;
+                    DEBUG_LOG("Ready to process payload\n");
+                } else {
+                    // process the headers
+                    DEBUG_LOG("Header data: [%s]\n", data);
+                    parsing_stage = 2;
+                }
+            }
+            memset(data, 0, allocated_space);
+            data_size = 0;
             memcpy(buffer, buffer + 1, --bytes_read);
             buffer[bytes_read] = '\0';
         }
@@ -253,9 +274,10 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                 char* end = strstr(start, "\r\n");
                 if(end) {
                     size_t data_delta_len = end - start;
+                    // DEBUG_LOG("Data size: %zu, Data delta length: %zu, Allocated Space %zu\n", data_size,data_delta_len, allocated_space);
                     if(data_delta_len > 0) {
                         if ((data_size + data_delta_len) > allocated_space) {
-                            allocated_space = data_delta_len + 1;
+                            allocated_space += RANHTTP_REQUEST_READER_BUFFER_SIZE;
                             data = (char*) realloc(data, allocated_space);
                             if(!data) {
                                 return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
@@ -263,20 +285,31 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                         }
                         strncpy(data+data_size, start, data_delta_len);
                         data_size += data_delta_len;
-                        data[data_delta_len] = '\0';
+                        data[data_size] = '\0';
                     }
                     start = end + 2;
                     bytes_remained -= (data_delta_len + 2);
                     if(parsing_stage == 0) {
                         // pocess the first data
-                        DEBUG_LOG("Request line: %s\n", data);
+                        ranhttp__request_parser_error_t error = ranhttp__request_read_line_0(request, data);
+                        if(error != RANHTTP_REQUEST_PARSER_ERROR_NONE) {
+                            free(data);
+                            return error;
+                        }
+                        DEBUG_LOG("Request line: [%s]\n", data);
                         parsing_stage = 1;
                         memset(data, 0, allocated_space);
                         data_size = 0;
                     } else if(parsing_stage == 1 || parsing_stage == 2) {
-                        // process the headers
-                        DEBUG_LOG("Header data: %s\n", data);
-                        parsing_stage = 2;
+                        if(data[0] == '\0') {
+                            // Empty data indicates end of headers
+                            parsing_stage = 3;
+                            DEBUG_LOG("Ready to process payload\n");
+                        } else {
+                            // process the headers
+                            DEBUG_LOG("Header data: [%s]\n", data);
+                            parsing_stage = 2;
+                        }
                         memset(data, 0, allocated_space);
                         data_size = 0;
                     }
@@ -293,6 +326,7 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                     data[data_size] = '\0';
                     bytes_remained = 0;
                 }
+                // DEBUG_LOG("Current data: %s, Data size %zu, Bytes Remained %zu\n", data, data_size, bytes_remained);
             } while(bytes_remained > 0);
         }
         last_char = buffer[bytes_read - 1];
