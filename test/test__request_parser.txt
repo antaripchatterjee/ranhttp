@@ -1,10 +1,9 @@
-GET /api/path?api-version=v1& HTTP/1.1
+POST /api/path?api-version=v1&p1&p2=&p4=9& HTTP/1.1
 Content-Type: application/json
 Content-Length: 61
 Authorization: Bearer cvyugvfgfd-vhgcr-ccxx
-User-Agent: sample-app
+User-Agent: sampleapp
 Host: ranhttp.io
-Origin: ranhttp.io
 
 {
     "id": 13253,

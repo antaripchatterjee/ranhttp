@@ -47,8 +47,20 @@ void test__ranhttp__request_parse_from_fd(ranhttp__request_t *request) {
     DEBUG_LOG("fd: %d\n", fd);
     TEST_ASSERT(fd >= 0);
     int result = ranhttp__request_parse_from_fd(request, fd);
-    TEST_ASSERT(result == RANHTTP_REQUEST_PARSER_ERROR_NONE);
     close(fd);
+    TEST_ASSERT(result == RANHTTP_REQUEST_PARSER_ERROR_NONE);
+    TEST_ASSERT(result == RANHTTP_REQUEST_PARSER_ERROR_NONE);
+    TEST_ASSERT_STR_EQ(request->http_method, "POST");
+    TEST_ASSERT_STR_EQ(request->path, "/api/path");
+    TEST_ASSERT_STR_EQ(request->http_version, "HTTP/1.1");
+    TEST_ASSERT_STR_EQ(request->query_params[0].name, "api-version");
+    TEST_ASSERT_STR_EQ(request->query_params[0].value, "v1");
+    TEST_ASSERT_STR_EQ(request->query_params[1].name, "p1");
+    TEST_ASSERT_NULL(request->query_params[1].value);
+    TEST_ASSERT_STR_EQ(request->query_params[2].name, "p2");
+    TEST_ASSERT_NULL(request->query_params[2].value);
+    TEST_ASSERT_STR_EQ(request->query_params[3].name, "p4");
+    TEST_ASSERT_NOT_NULL(request->query_params[4].value);
     TEST_ENDED;
 }
 
