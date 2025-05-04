@@ -48,7 +48,7 @@ void test__ranhttp__request_parse_from_fd(ranhttp__request_t *request) {
     TEST_ASSERT(fd >= 0);
     int result = ranhttp__request_parse_from_fd(request, fd);
     close(fd);
-    TEST_ASSERT(result == RANHTTP_REQUEST_PARSER_ERROR_NONE);
+    DEBUG_LOG("result: %d\n", result);
     TEST_ASSERT(result == RANHTTP_REQUEST_PARSER_ERROR_NONE);
     TEST_ASSERT_STR_EQ(request->http_method, "POST");
     TEST_ASSERT_STR_EQ(request->path, "/api/path");
@@ -67,8 +67,8 @@ void test__ranhttp__request_parse_from_fd(ranhttp__request_t *request) {
 int main() {
     ranhttp__request_t request;
     test__ranhttp__request_init(&request);
+    test__ranhttp__request_parse_from_fd(&request);
     test__ranhttp__request_destroy(&request);
     // test__ranhttp__request_parse_from_buffer(&request, TEST_BUFFER);
-    test__ranhttp__request_parse_from_fd(&request);
     return 0;
 }

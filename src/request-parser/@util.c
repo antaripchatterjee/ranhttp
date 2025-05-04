@@ -6,6 +6,8 @@
 #include "request-parser/@util.h"
 #include "request-parser/@macro.h"
 
+#include "ranhttp-utilities/main.h"
+
 DLLEXPORT
 ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t *request, const char *line_0)
 {
@@ -40,7 +42,17 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
                     free(full_url_path);
                     return RANHTTP_REQUEST_PARSER_ERROR_PATH_TOO_LONG;
                 }
-                strncpy(request->path, full_url_path, url_path_len);
+                // strncpy(request->path, full_url_path, url_path_len);
+                if(!ranhttp__utility_decode_uri_component(full_url_path, url_path_len, request->path, sizeof(request->path)))
+                {
+                    free(full_url_path);
+                    return RANHTTP_REQUEST_PARSER_ERROR_MALFORMED_URI_COMPONENT;
+                }
+                
+                if(!ranhttp__utility_is_valid_query_string(path_end, full_url_path_end - path_end)) {
+                    free(full_url_path);
+                    return RANHTTP_REQUEST_PARSER_ERROR_MALFORMED_QUERY_STRING;
+                }
 
                 // Parse query parameters
                 char *query_param_start = path_end + 1;
@@ -92,8 +104,13 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
                             free(full_url_path);
                             return RANHTTP_REQUEST_PARSER_ERROR_QUERY_PARAM_NAME_TOO_LONG;
                         }
-                        strncpy(request->query_params[query_param_count].name, query_param_buf, query_param_name_len);
-                        request->query_params[query_param_count].name[query_param_name_len] = '\0';
+                        // strncpy(request->query_params[query_param_count].name, query_param_buf, query_param_name_len);
+                        // request->query_params[query_param_count].name[query_param_name_len] = '\0';
+                        if(!ranhttp__utility_decode_uri_component(query_param_buf, query_param_name_len, request->query_params[query_param_count].name, sizeof(request->query_params[query_param_count].name))) {
+                            free(query_param_buf);
+                            free(full_url_path);
+                            return RANHTTP_REQUEST_PARSER_ERROR_MALFORMED_URI_COMPONENT;
+                        }
                         DEBUG_LOG("query_param_name: %s\n", request->query_params[query_param_count].name);
                         char *query_param_value_start = query_param_name_end + 1;
                         size_t query_param_value_len = query_param_name_end ? strlen(query_param_value_start) : 0;
@@ -106,15 +123,22 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
                                 free(full_url_path);
                                 return RANHTTP_REQUEST_PARSER_ERROR_QUERY_PARAM_VALUE_TOO_BIG;
                             }
-                            request->query_params[query_param_count].value = (char *)malloc(query_param_value_len + 1);
-                            if (!request->query_params[query_param_count].value)
+                            request->query_params[query_param_count].value = ranhttp__utility_decode_uri_component(query_param_value_start, query_param_value_len, NULL, query_param_value_len + 1);
+                            if(!request->query_params[query_param_count].value)
                             {
                                 free(query_param_buf);
                                 free(full_url_path);
-                                return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                                return RANHTTP_REQUEST_PARSER_ERROR_MALFORMED_URI_COMPONENT;
                             }
-                            strncpy(request->query_params[query_param_count].value, query_param_value_start, query_param_value_len);
-                            request->query_params[query_param_count].value[query_param_value_len] = '\0';
+                            // request->query_params[query_param_count].value = (char *)malloc(query_param_value_len + 1);
+                            // if (!request->query_params[query_param_count].value)
+                            // {
+                            //     free(query_param_buf);
+                            //     free(full_url_path);
+                            //     return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                            // }
+                            // strncpy(request->query_params[query_param_count].value, query_param_value_start, query_param_value_len);
+                            // request->query_params[query_param_count].value[query_param_value_len] = '\0';
                         }
                         query_param_count++;
                     }
@@ -125,7 +149,11 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
             else
             {
                 // No query parameters
-                strncpy(request->path, full_url_path, full_url_path_size);
+                // strncpy(request->path, full_url_path, full_url_path_size);
+                if(!ranhttp__utility_decode_uri_component(full_url_path, full_url_path_size, request->path, sizeof(request->path))) {
+                    free(full_url_path);
+                    return RANHTTP_REQUEST_PARSER_ERROR_MALFORMED_URI_COMPONENT;
+                }
             }
             free(full_url_path);
         }
