@@ -6,6 +6,8 @@
 #include "request-parser/main.h"
 #include "request-parser/@util.h"
 
+#include "ranhttp-utilities/main.h"
+
 
 
 DLLEXPORT
@@ -231,6 +233,7 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
     int parsing_stage = 0; // 0: request line, 1,2: headers, 3: payload
     char last_char = '\0';
     size_t header_count = 0;
+    uint64_t content_length = 0;
     while(1) {
         bytes_read = read(fd, buffer, RANHTTP_REQUEST_READER_BUFFER_SIZE);
         buffer[bytes_read] = '\0';
@@ -257,7 +260,12 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                 if(data[0] == '\0') {
                     // Empty data indicates end of headers
                     parsing_stage = 3;
-                    DEBUG_LOG("Ready to process payload\n");
+                    int e = ranhttp__utility_find_content_length(request, &content_length);
+                    if(e) {
+                        free(data);
+                        return RANHTTP_REQUEST_PARSER_ERROR_MALFORMED_CONTENT_LENGTH;
+                    }
+                    DEBUG_LOG("Expected payload length %zu\n", content_length);
                 } else {
                     // process the headers
                     DEBUG_LOG("Header data: [%s]\n", data);
@@ -312,7 +320,12 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                         if(data[0] == '\0') {
                             // Empty data indicates end of headers
                             parsing_stage = 3;
-                            DEBUG_LOG("Ready to process payload\n");
+                            int e = ranhttp__utility_find_content_length(request, &content_length);
+                            if(e) {
+                                free(data);
+                                return RANHTTP_REQUEST_PARSER_ERROR_MALFORMED_CONTENT_LENGTH;
+                            }
+                            DEBUG_LOG("Expected payload length %zu\n", content_length);
                         } else {
                             // process the headers
                             DEBUG_LOG("Header data: [%s]\n", data);

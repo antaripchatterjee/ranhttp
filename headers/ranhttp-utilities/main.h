@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "request-parser/@types.h"
+
 #include "../common.h"
 
 
@@ -22,6 +24,12 @@ char* ranhttp__utility_decode_uri_component(const char* encoded_component, const
 
 DLLEXPORT
 int ranhttp__utility_is_valid_header_name(const char* header_name);
+
+DLLEXPORT
+char* ranhttp__utility_find_header_from_request(ranhttp__request_t* request, const char* lc_header_name, int* error);
+
+DLLEXPORT
+int ranhttp__utility_find_content_length(ranhttp__request_t* request, uint64_t* value);
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "ranhttp-utilities/@private.h"
 #include "ranhttp-utilities/main.h"
@@ -199,4 +200,54 @@ int ranhttp__utility_is_valid_header_name(const char* header_name) {
     }
 
     return 1;
+}
+
+DLLEXPORT
+char* ranhttp__utility_find_header_from_request(ranhttp__request_t* request, const char* lc_header_name, int* error) {
+    if(!request || !(request->headers) || !lc_header_name) {
+        if(error) {
+            *error = -1;
+        }
+        return NULL; // This is error
+    }
+    if(!error) {
+        return NULL; // This is error too
+    }
+
+    // Iterate through each header and compare the value of header name with arg lc_header_name until the lc_header_name is matched or header name is empty string.
+    for(size_t i = 0; i < request->limits.max_header_count && request->headers[i].name[0] != '\0'; i++) {
+        if(strcmp(request->headers[i].name, lc_header_name) == 0) {
+            *error = 0;
+            return request->headers[i].value;
+        }
+    }
+    *error = 0; 
+    return NULL; // This is not error
+}
+
+DLLEXPORT
+int ranhttp__utility_find_content_length(ranhttp__request_t* request, uint64_t* value) {
+    if(!value) return 0;
+    int error = 0;
+    uint64_t content_length = 0;
+    char* end;
+    char* content_length_buf = ranhttp__utility_find_header_from_request(request, "content-length", &error);
+    if(error == 0 && content_length_buf) {
+        // convert content_length_buf to uint64_t
+        errno = 0;
+        for(const char* p = content_length_buf; *p; ++p) {
+            if(*p < '0' || *p > '9') {
+                error = 1;
+                break;
+            }
+        }
+        if(error == 0) {
+            content_length = (uint64_t) strtoull(content_length_buf, &end, 10);
+            if(errno == ERANGE || content_length > UINT64_MAX || *end != '\0') {
+                error = 1;
+            }
+            *value = content_length;
+        }
+    }
+    return error;
 }

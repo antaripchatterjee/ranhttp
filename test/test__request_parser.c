@@ -64,7 +64,7 @@ void test__ranhttp__request_parse_from_fd(ranhttp__request_t *request) {
     TEST_ASSERT_STR_EQ(request->headers[0].name, "content-type");
     TEST_ASSERT_STR_EQ(request->headers[0].value, "application/json");
     TEST_ASSERT_STR_EQ(request->headers[1].name, "content-length");
-    TEST_ASSERT_STR_EQ(request->headers[1].value, "61");
+    TEST_ASSERT_STR_EQ(request->headers[1].value, "66");
     TEST_ASSERT_STR_EQ(request->headers[2].name, "authorization");
     TEST_ASSERT_STR_EQ(request->headers[2].value, "Bearer cvyugvfgfd-vhgcr-ccxx");
     TEST_ASSERT_STR_EQ(request->headers[3].name, "user-agent");
