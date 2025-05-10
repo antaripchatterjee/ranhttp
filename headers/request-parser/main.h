@@ -16,7 +16,7 @@ DLLEXPORT
 ranhttp__request_parser_error_t ranhttp__request_destroy(ranhttp__request_t *request);
 
 DLLEXPORT
-ranhttp__request_parser_error_t ranhttp__request_init(ranhttp__request_t *request, ranhttp__request_control_limit_t *control_limits);
+ranhttp__request_parser_error_t ranhttp__request_init(ranhttp__request_t *request, ranhttp__request_limit_t *limits);
 
 DLLEXPORT
 ranhttp__request_parser_error_t ranhttp__request_parse_from_buffer(ranhttp__request_t *request, const char* buf);

@@ -14,33 +14,33 @@ ranhttp__request_parser_error_t ranhttp__request_destroy(ranhttp__request_t *req
         return RANHTTP_REQUEST_PARSER_ERROR_INVALID_POINTER;
     }
     
-    if (request->path_params) {
-        for (size_t i = 0; i < request->control_limits.max_path_param_count; i++) {
-            if(request->path_params[i].value) free(request->path_params[i].value);
-        }
-        free(request->path_params);
-    }
+    // if (request->path_params) {
+    //     for (size_t i = 0; i < request->limits.max_path_param_count; i++) {
+    //         if(request->path_params[i].value) free(request->path_params[i].value);
+    //     }
+    //     free(request->path_params);
+    // }
     
     if (request->query_params) {
-        for (size_t i = 0; i < request->control_limits.max_query_param_count; i++) {
+        for (size_t i = 0; i < request->limits.max_query_param_count; i++) {
             if(request->query_params[i].value) free(request->query_params[i].value);
         }
         free(request->query_params);
     }
     
     if (request->headers) {
-        for (size_t i = 0; i < request->control_limits.max_header_count; i++) {
+        for (size_t i = 0; i < request->limits.max_header_count; i++) {
             if(request->headers[i].value) free(request->headers[i].value);
         }
         free(request->headers);
     }
     
-    if (request->cookies) {
-        for (size_t i = 0; i < request->control_limits.max_cookie_count; i++) {
-            if(request->cookies[i].value) free(request->cookies[i].value);
-        }
-        free(request->cookies);
-    }
+    // if (request->cookies) {
+    //     for (size_t i = 0; i < request->limits.max_cookie_count; i++) {
+    //         if(request->cookies[i].value) free(request->cookies[i].value);
+    //     }
+    //     free(request->cookies);
+    // }
     
     if (request->payload) {
         free(request->payload);
@@ -50,40 +50,41 @@ ranhttp__request_parser_error_t ranhttp__request_destroy(ranhttp__request_t *req
 }
 
 DLLEXPORT
-ranhttp__request_parser_error_t ranhttp__request_init(ranhttp__request_t *request, ranhttp__request_control_limit_t *control_limits) {
+ranhttp__request_parser_error_t ranhttp__request_init(ranhttp__request_t *request, ranhttp__request_limit_t *limits) {
     if (request == NULL) {
         return RANHTTP_REQUEST_PARSER_ERROR_INVALID_POINTER;
     }
     memset(request->http_method, 0, sizeof(request->http_method));
     memset(request->path, 0, sizeof(request->path));
     memset(request->http_version, 0, sizeof(request->http_version));
+    request->cookie_header_index = -1;
     
-    if(control_limits) {
-        memcpy(&(request->control_limits), control_limits, sizeof(ranhttp__request_control_limit_t));
+    if(limits) {
+        memcpy(&(request->limits), limits, sizeof(ranhttp__request_limit_t));
     } else {
-        request->control_limits = (ranhttp__request_control_limit_t) RANHTTP_INIT_REQUEST_CONTROL_LIMITS;
+        request->limits = (ranhttp__request_limit_t) RANHTTP_REQUEST_DEFAULT_LIMITS;
     }
 
-    if(request->control_limits.max_path_param_count) {
-        request->path_params = (ranhttp__request_path_param_t*) malloc(sizeof(ranhttp__request_path_param_t) * request->control_limits.max_path_param_count);
-        if (!request->path_params) {
-            return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
-        }
-        for (size_t i = 0; i < request->control_limits.max_path_param_count; i++) {
-            memset(request->path_params[i].name, 0, sizeof(request->path_params[i].name));
-            request->path_params[i].value = NULL;
-        }
-    } else {
-        request->path_params = NULL;
-    }
+    // if(request->limits.max_path_param_count) {
+    //     request->path_params = (ranhttp__request_path_param_t*) malloc(sizeof(ranhttp__request_path_param_t) * request->limits.max_path_param_count);
+    //     if (!request->path_params) {
+    //         return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+    //     }
+    //     for (size_t i = 0; i < request->limits.max_path_param_count; i++) {
+    //         memset(request->path_params[i].name, 0, sizeof(request->path_params[i].name));
+    //         request->path_params[i].value = NULL;
+    //     }
+    // } else {
+    //     request->path_params = NULL;
+    // }
 
-    if(request->control_limits.max_query_param_count) {
-        request->query_params = (ranhttp__request_query_param_t*) malloc(sizeof(ranhttp__request_query_param_t) * request->control_limits.max_query_param_count);
+    if(request->limits.max_query_param_count) {
+        request->query_params = (ranhttp__request_query_param_t*) malloc(sizeof(ranhttp__request_query_param_t) * request->limits.max_query_param_count);
         if (!request->query_params) {
-            free(request->path_params);
+            // free(request->path_params);
             return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
         }
-        for (size_t i = 0; i < request->control_limits.max_query_param_count; i++) {
+        for (size_t i = 0; i < request->limits.max_query_param_count; i++) {
             memset(request->query_params[i].name, 0, sizeof(request->query_params[i].name));
             request->query_params[i].value = NULL;
         }
@@ -91,14 +92,14 @@ ranhttp__request_parser_error_t ranhttp__request_init(ranhttp__request_t *reques
         request->query_params = NULL;
     }
     
-    if(request->control_limits.max_header_count) {
-        request->headers = (ranhttp__request_header_t*) malloc(sizeof(ranhttp__request_header_t) * request->control_limits.max_header_count);
+    if(request->limits.max_header_count) {
+        request->headers = (ranhttp__request_header_t*) malloc(sizeof(ranhttp__request_header_t) * request->limits.max_header_count);
         if (!request->headers) {
-            free(request->path_params);
+            // free(request->path_params);
             free(request->query_params);
             return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
         }
-        for (size_t i = 0; i < request->control_limits.max_header_count; i++) {
+        for (size_t i = 0; i < request->limits.max_header_count; i++) {
             memset(request->headers[i].name, 0, sizeof(request->headers[i].name));
             request->headers[i].value = NULL;
         }
@@ -106,29 +107,29 @@ ranhttp__request_parser_error_t ranhttp__request_init(ranhttp__request_t *reques
         request->headers = NULL;
     }
     
-    if(request->control_limits.max_cookie_count) {
-        request->cookies = (ranhttp__request_cookie_t*) malloc(sizeof(ranhttp__request_cookie_t) * request->control_limits.max_cookie_count);
-        if (!request->cookies) {
-            free(request->path_params);
-            free(request->query_params);
-            free(request->headers);
-            return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
-        }
-        for (size_t i = 0; i < request->control_limits.max_cookie_count; i++) {
-            memset(request->cookies[i].name, 0, sizeof(request->cookies[i].name));
-            request->cookies[i].value = NULL;
-        }
-    } else {
-        request->cookies = NULL;
-    }
+    // if(request->limits.max_cookie_count) {
+    //     request->cookies = (ranhttp__request_cookie_t*) malloc(sizeof(ranhttp__request_cookie_t) * request->limits.max_cookie_count);
+    //     if (!request->cookies) {
+    //         free(request->path_params);
+    //         free(request->query_params);
+    //         free(request->headers);
+    //         return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+    //     }
+    //     for (size_t i = 0; i < request->limits.max_cookie_count; i++) {
+    //         memset(request->cookies[i].name, 0, sizeof(request->cookies[i].name));
+    //         request->cookies[i].value = NULL;
+    //     }
+    // } else {
+    //     request->cookies = NULL;
+    // }
 
-    if(request->control_limits.max_payload_size) {
+    if(request->limits.max_payload_size) {
         request->payload = (char*) malloc(RANHTTP_REQUEST_PAYLOAD_BUF_SIZE);
         if (!request->payload) {
-            free(request->path_params);
+            // free(request->path_params);
             free(request->query_params);
             free(request->headers);
-            free(request->cookies);
+            // free(request->cookies);
             return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
         }
         memset(request->payload, 0, RANHTTP_REQUEST_PAYLOAD_BUF_SIZE);
@@ -191,7 +192,7 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_buffer(ranhttp__requ
     // Read payload if any
     // if (parsing_stage == 3) {
     //     size_t payload_len = strlen(start);
-    //     if (payload_len > request->control_limits.max_payload_size) {
+    //     if (payload_len > request->limits.max_payload_size) {
     //         error = RANHTTP_REQUEST_PARSER_ERROR_INVALID_VERSION;
     //     } else {
     //         if (payload_len > r_buffer_size_last) {
@@ -229,6 +230,7 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
     int bytes_read = 0;
     int parsing_stage = 0; // 0: request line, 1,2: headers, 3: payload
     char last_char = '\0';
+    size_t header_count = 0;
     while(1) {
         bytes_read = read(fd, buffer, RANHTTP_REQUEST_READER_BUFFER_SIZE);
         buffer[bytes_read] = '\0';
@@ -259,6 +261,12 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                 } else {
                     // process the headers
                     DEBUG_LOG("Header data: [%s]\n", data);
+                    ranhttp__request_parser_error_t error = ranhttp__request_read_header_string(request, data, header_count);
+                    if(error != RANHTTP_REQUEST_PARSER_ERROR_NONE) {
+                        free(data);
+                        return error;
+                    }
+                    header_count++;
                     parsing_stage = 2;
                 }
             }
@@ -308,6 +316,12 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                         } else {
                             // process the headers
                             DEBUG_LOG("Header data: [%s]\n", data);
+                            ranhttp__request_parser_error_t error = ranhttp__request_read_header_string(request, data, header_count);
+                            if(error != RANHTTP_REQUEST_PARSER_ERROR_NONE) {
+                                free(data);
+                                return error;
+                            }
+                            header_count++;
                             parsing_stage = 2;
                         }
                         memset(data, 0, allocated_space);

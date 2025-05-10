@@ -13,6 +13,9 @@ extern "C" {
 DLLEXPORT
 ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t *request, const char* line_0);
 
+DLLEXPORT
+ranhttp__request_parser_error_t ranhttp__request_read_header_string(ranhttp__request_t *request, const char* header_string, const size_t header_count);
+
 
 #ifdef __cplusplus
 }

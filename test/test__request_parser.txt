@@ -3,6 +3,8 @@ Content-Type: application/json
 Content-Length: 61
 Authorization: Bearer cvyugvfgfd-vhgcr-ccxx
 User-Agent: sampleapp
+Cookie: user=1; lang=en
+Accept: */*
 Host: ranhttp.io
 
 {

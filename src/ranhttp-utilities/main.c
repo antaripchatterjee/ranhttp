@@ -177,3 +177,26 @@ char* ranhttp__utility_decode_uri_component(const char* encoded_component, const
     out[oi] = '\0';
     return out;
 }
+
+DLLEXPORT
+int ranhttp__utility_is_valid_header_name(const char* header_name) {
+    if (!header_name || *header_name == '\0') return 0;
+
+    size_t len = strlen(header_name);
+    // Reject leading or trailing whitespace
+    if (isspace((unsigned char)header_name[0]) || isspace((unsigned char)header_name[len - 1]))
+        return 0;
+
+    for (size_t i = 0; i < len; ++i) {
+        char c = header_name[i];
+        
+        if (!isalnum((unsigned char)c) && 
+            c != '!' && c != '#' && c != '$' && c != '%' && c != '&' && c != '\'' &&
+            c != '*' && c != '+' && c != '-' && c != '.' && c != '^' && c != '_' &&
+            c != '`' && c != '|' && c != '~') {
+            return 0;
+        }
+    }
+
+    return 1;
+}

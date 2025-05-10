@@ -60,7 +60,22 @@ void test__ranhttp__request_parse_from_fd(ranhttp__request_t *request) {
     TEST_ASSERT_STR_EQ(request->query_params[2].name, "p2");
     TEST_ASSERT_NULL(request->query_params[2].value);
     TEST_ASSERT_STR_EQ(request->query_params[3].name, "p4");
-    TEST_ASSERT_NOT_NULL(request->query_params[4].value);
+    TEST_ASSERT_NOT_NULL(request->query_params[3].value);
+    TEST_ASSERT_STR_EQ(request->headers[0].name, "content-type");
+    TEST_ASSERT_STR_EQ(request->headers[0].value, "application/json");
+    TEST_ASSERT_STR_EQ(request->headers[1].name, "content-length");
+    TEST_ASSERT_STR_EQ(request->headers[1].value, "61");
+    TEST_ASSERT_STR_EQ(request->headers[2].name, "authorization");
+    TEST_ASSERT_STR_EQ(request->headers[2].value, "Bearer cvyugvfgfd-vhgcr-ccxx");
+    TEST_ASSERT_STR_EQ(request->headers[3].name, "user-agent");
+    TEST_ASSERT_STR_EQ(request->headers[3].value, "sampleapp");
+    TEST_ASSERT_STR_EQ(request->headers[4].name, "cookie");
+    TEST_ASSERT_STR_EQ(request->headers[4].value, "user=1; lang=en");
+    TEST_ASSERT_STR_EQ(request->headers[5].name, "accept");
+    TEST_ASSERT_STR_EQ(request->headers[5].value, "*/*");
+    TEST_ASSERT_STR_EQ(request->headers[6].name, "host");
+    TEST_ASSERT_STR_EQ(request->headers[6].value, "ranhttp.io");
+
     TEST_ENDED;
 }
 

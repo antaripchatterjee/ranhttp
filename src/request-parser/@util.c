@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "request-parser/@util.h"
 #include "request-parser/@macro.h"
@@ -11,6 +12,9 @@
 DLLEXPORT
 ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t *request, const char *line_0)
 {
+    if (!request || !line_0) {
+        return RANHTTP_REQUEST_PARSER_ERROR_INVALID_POINTER;
+    }
     const char *start = line_0;
     char *method_end = strchr(line_0, ' ');
     if (method_end)
@@ -68,8 +72,9 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
                 size_t query_param_len = 0;
                 do
                 {
-                    if (query_param_count >= request->control_limits.max_query_param_count)
+                    if (query_param_count >= request->limits.max_query_param_count)
                     {
+                        // Breaking out of the loop but not returning error as remaining raw request is still valid
                         break; // Exceeded max query param count
                     }
                     query_param_end = strchr(query_param_start, '&');
@@ -183,6 +188,91 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
     {
         // No method found
         return RANHTTP_REQUEST_PARSER_ERROR_INVALID_METHOD;
+    }
+    return RANHTTP_REQUEST_PARSER_ERROR_NONE;
+}
+
+
+DLLEXPORT
+ranhttp__request_parser_error_t ranhttp__request_read_header_string(ranhttp__request_t *request, const char* header_string, const size_t header_count) {
+    if(!request || !header_string) {
+        return RANHTTP_REQUEST_PARSER_ERROR_INVALID_POINTER;
+    }
+    if(header_count >= request->limits.max_header_count) {
+        return RANHTTP_REQUEST_PARSER_ERROR_TOO_MANY_HEADERS;
+    }
+    
+    size_t len = strlen(header_string);
+    size_t trailing_space_count = 0;
+    // int is_cookie = 0;
+    // Parsing cookie should be deferred to the cookie parser on demand
+
+    // Counting trailing spaces
+    for (size_t i = len-1; i >= 0 && header_string[i] != ':'; i--) {
+        if(isspace(header_string[i])) {
+            // len--;
+            trailing_space_count++;
+        } else {
+            break;
+        }
+    }
+    const char *colon = strchr(header_string, ':');
+    if (colon) {
+        size_t header_name_len = colon - header_string;
+        if (header_name_len >= sizeof(request->headers[header_count].name)) {
+            return RANHTTP_REQUEST_PARSER_ERROR_HEADER_NAME_TOO_LONG;
+        }
+        // strncpy(request->headers[header_count].name, header_string, header_name_len);
+        // copy characters from header_string to request->headers[header_count].name till header_name_len in lower case
+        for (size_t i = 0; i < header_name_len; i++) {
+            request->headers[header_count].name[i] = tolower(header_string[i]);
+        }
+        request->headers[header_count].name[header_name_len] = '\0';
+        DEBUG_LOG("Header name: %s\n", request->headers[header_count].name);
+        if(!ranhttp__utility_is_valid_header_name(request->headers[header_count].name)) {
+            memset(request->headers[header_count].name, 0, sizeof(request->headers[header_count].name));
+            return RANHTTP_REQUEST_PARSER_ERROR_INVALID_HEADER_NAME;
+        }
+        // Now check if the header_name is already present in the request
+        for (size_t i = 0; i < header_count; i++) {
+            if (strcmp(request->headers[i].name, request->headers[header_count].name) == 0) {
+                // Header already exists
+                return RANHTTP_REQUEST_PARSER_ERROR_DUPLICATE_HEADER_NAME;
+            }
+        }
+        // Check if the header is a cookie
+        if (strcmp(request->headers[header_count].name, "cookie") == 0) {
+            // is_cookie = 1;
+            request->cookie_header_index = header_count;
+        }
+
+        const char *value_start = colon + 1;
+        // Decounting leading spaces
+        while (*value_start == ' ') {
+            value_start++;
+        }
+        size_t value_len = strlen(value_start) - trailing_space_count;
+        if (value_len <= 0) {
+            return RANHTTP_REQUEST_PARSER_ERROR_INVALID_HEADER_STRING;
+        } else if(value_len > request->limits.max_header_value_size) {
+            return RANHTTP_REQUEST_PARSER_ERROR_HEADER_VALUE_TOO_LONG;
+        }
+        request->headers[header_count].value = (char *)malloc(value_len + 1);
+        if (!request->headers[header_count].value) {
+            return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+        }
+        strncpy(request->headers[header_count].value, value_start, value_len);
+        request->headers[header_count].value[value_len] = '\0';
+        for(size_t i = 0; i < value_len; i++) {
+            if (iscntrl(request->headers[header_count].value[i]) && request->headers[header_count].value[i] != '\t') {
+                free(request->headers[header_count].value);
+                request->headers[header_count].value = NULL;
+                memset(request->headers[header_count].name, 0, sizeof(request->headers[header_count].name));
+                return RANHTTP_REQUEST_PARSER_ERROR_INVALID_HEADER_VALUE;
+            }
+        }
+    } else {
+        return RANHTTP_REQUEST_PARSER_ERROR_INVALID_HEADER_STRING;
     }
     return RANHTTP_REQUEST_PARSER_ERROR_NONE;
 }
