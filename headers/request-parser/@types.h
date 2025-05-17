@@ -10,15 +10,6 @@ typedef struct {
     char *value;
 } ranhttp__request_header_t;
 
-// typedef struct {
-//     char name[RANHTTP_REQUEST_HEADER_NAME_MAX_SIZE+1];
-//     char *value;
-// } ranhttp__request_cookie_t;
-
-// typedef struct {
-//     char name[RANHTTP_REQUEST_PATH_PARAM_NAME_MAX_SIZE+1];
-//     char *value;
-// } ranhttp__request_path_param_t;
 
 typedef struct {
     char name[RANHTTP_REQUEST_QUERY_PARAM_NAME_MAX_SIZE+1];
@@ -26,11 +17,17 @@ typedef struct {
 } ranhttp__request_query_param_t;
 
 typedef struct {
+    size_t count;
+    char (*headers)[RANHTTP_REQUEST_HEADER_NAME_MAX_SIZE+1];
+} ranhttp__header_whitelist_t;
+
+typedef struct {
     size_t max_header_count;
     size_t max_header_value_size;
     size_t max_query_param_count;
     size_t max_query_param_value_size;
     size_t max_payload_size;
+    ranhttp__header_whitelist_t header_wl;
 } ranhttp__request_limit_t;
 
 typedef struct {

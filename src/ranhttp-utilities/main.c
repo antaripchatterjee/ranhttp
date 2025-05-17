@@ -251,3 +251,35 @@ int ranhttp__utility_find_content_length(ranhttp__request_t* request, uint64_t* 
     }
     return error;
 }
+
+
+DLLEXPORT
+size_t ranhttp__utility_whitelist_header(ranhttp__header_whitelist_t* whitelist, const char* header_name) {
+    if(!whitelist || !header_name) {
+        return 0U;
+    }
+    size_t header_name_len = strlen(header_name);
+
+    if(header_name_len >= sizeof(whitelist->headers[whitelist->count])) {
+        return whitelist->count;
+    }
+    
+    char _header_name_lower[sizeof(*(whitelist->headers))] = { 0 };
+    for(size_t i = 0; i < header_name_len; i++) {
+        _header_name_lower[i] = tolower(header_name[i]);
+    }
+
+    if(!ranhttp__utility_is_valid_header_name(_header_name_lower)) {
+        return whitelist->count;
+    }
+
+    if(whitelist->count % 32 == 0) {
+        whitelist->headers = realloc(whitelist->headers , sizeof(*(whitelist->headers)) * (((whitelist->count / 32) + 1) * 32));
+        if(!(whitelist->headers)) {
+            whitelist->count = 0U;
+            return 0U;
+        }
+    }
+    strcpy(whitelist->headers[whitelist->count++], _header_name_lower);
+    return whitelist->count;
+}

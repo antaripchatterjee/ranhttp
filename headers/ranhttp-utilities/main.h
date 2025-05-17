@@ -31,6 +31,9 @@ char* ranhttp__utility_find_header_from_request(ranhttp__request_t* request, con
 DLLEXPORT
 int ranhttp__utility_find_content_length(ranhttp__request_t* request, uint64_t* value);
 
+DLLEXPORT
+size_t ranhttp__utility_whitelist_header(ranhttp__header_whitelist_t* whitelist, const char* header_name);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

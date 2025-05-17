@@ -199,7 +199,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_header_string(ranhttp__req
         return RANHTTP_REQUEST_PARSER_ERROR_INVALID_POINTER;
     }
     if(header_count >= request->limits.max_header_count) {
-        return RANHTTP_REQUEST_PARSER_ERROR_TOO_MANY_HEADERS;
+        return RANHTTP_REQUEST_PARSER_WARN_TOO_MANY_HEADERS;
     }
     
     size_t len = strlen(header_string);
@@ -217,6 +217,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_header_string(ranhttp__req
         }
     }
     const char *colon = strchr(header_string, ':');
+    char _header_name_temp[sizeof(((ranhttp__request_header_t){0}).name)] = { 0 };
     if (colon) {
         size_t header_name_len = colon - header_string;
         if (header_name_len >= sizeof(request->headers[header_count].name)) {
@@ -225,10 +226,24 @@ ranhttp__request_parser_error_t ranhttp__request_read_header_string(ranhttp__req
         // strncpy(request->headers[header_count].name, header_string, header_name_len);
         // copy characters from header_string to request->headers[header_count].name till header_name_len in lower case
         for (size_t i = 0; i < header_name_len; i++) {
-            request->headers[header_count].name[i] = tolower(header_string[i]);
+            _header_name_temp[i] = tolower(header_string[i]);
+            // request->headers[header_count].name[i] = tolower(header_string[i]);
         }
-        request->headers[header_count].name[header_name_len] = '\0';
-        DEBUG_LOG("Header name: %s\n", request->headers[header_count].name);
+        // request->headers[header_count].name[header_name_len] = '\0';
+        int s = -1;
+        if(request->limits.header_wl.headers) {
+            s = 0;
+            for(size_t i = 0; i < request->limits.header_wl.count; i++) {
+                if(strcmp(_header_name_temp, request->limits.header_wl.headers[i]) == 0) {
+                    s = 1;
+                    break;
+                }
+            }
+        }
+        if(s == 0) {
+            return RANHTTP_REQUEST_PARSER_WARN_HEADER_NOT_ALLOWED;
+        }
+        strcpy(request->headers[header_count].name, _header_name_temp);
         if(!ranhttp__utility_is_valid_header_name(request->headers[header_count].name)) {
             memset(request->headers[header_count].name, 0, sizeof(request->headers[header_count].name));
             return RANHTTP_REQUEST_PARSER_ERROR_INVALID_HEADER_NAME;
