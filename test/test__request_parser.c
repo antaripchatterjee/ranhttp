@@ -19,6 +19,7 @@ void test__ranhttp__request_init(ranhttp__request_t *request) {
     TEST_ASSERT(result == RANHTTP_REQUEST_PARSER_ERROR_NONE);
     ranhttp__utility_whitelist_header(&(request->limits.header_wl), "content-length");
     ranhttp__utility_whitelist_header(&(request->limits.header_wl), "Content-Type");
+    ranhttp__utility_whitelist_header(&(request->limits.header_wl), "Content-Type");
     ranhttp__utility_whitelist_header(&(request->limits.header_wl), "Authorization");
     TEST_ENDED;
 }

@@ -269,6 +269,13 @@ size_t ranhttp__utility_whitelist_header(ranhttp__header_whitelist_t* whitelist,
         _header_name_lower[i] = tolower(header_name[i]);
     }
 
+    for(size_t i = 0; i < whitelist->count; i++) {
+        if(strcmp(_header_name_lower, whitelist->headers[i]) == 0) {
+            return whitelist->count;
+        }
+    }
+    DEBUG_LOG("Whitelisted Header Name: %s\n", _header_name_lower);
+
     if(!ranhttp__utility_is_valid_header_name(_header_name_lower)) {
         return whitelist->count;
     }

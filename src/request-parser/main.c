@@ -35,6 +35,10 @@ ranhttp__request_parser_error_t ranhttp__request_destroy(ranhttp__request_t *req
         free(request->payload);
     }
 
+    if(request->limits.header_wl.headers) {
+        free(request->limits.header_wl.headers);
+    }
+
     return RANHTTP_REQUEST_PARSER_ERROR_NONE;
 }
 
@@ -233,8 +237,6 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                             && error != RANHTTP_REQUEST_PARSER_WARN_HEADER_NOT_ALLOWED) {
                             free(data);
                             return error;
-                        } else {
-                            DEBUG_LOG("TOO MANY HEADERS");
                         }
                     } else {
                         header_count++;
@@ -299,8 +301,6 @@ ranhttp__request_parser_error_t ranhttp__request_parse_from_fd(ranhttp__request_
                                     && error != RANHTTP_REQUEST_PARSER_WARN_HEADER_NOT_ALLOWED) {
                                     free(data);
                                     return error;
-                                } else {
-                                    DEBUG_LOG("TOO MANY HEADERS");
                                 }
                             } else {
                                 header_count++;
