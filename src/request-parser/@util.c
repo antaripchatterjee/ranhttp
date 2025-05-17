@@ -32,7 +32,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
             char *full_url_path = (char *)malloc(full_url_path_size + 1);
             if (!full_url_path)
             {
-                return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                return RANHTTP_REQUEST_PARSER_ERROR_INIT_FAILED;
             }
             strncpy(full_url_path, method_end + 1, full_url_path_size);
             full_url_path[full_url_path_size] = '\0';
@@ -66,7 +66,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
                 if (!query_param_buf)
                 {
                     free(full_url_path);
-                    return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                    return RANHTTP_REQUEST_PARSER_ERROR_INIT_FAILED;
                 }
                 size_t query_param_count = 0;
                 size_t query_param_len = 0;
@@ -96,7 +96,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
                             if (!query_param_buf)
                             {
                                 free(full_url_path);
-                                return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                                return RANHTTP_REQUEST_PARSER_ERROR_INIT_FAILED;
                             }
                         }
                         strncpy(query_param_buf, query_param_start, query_param_len);
@@ -140,7 +140,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_line_0(ranhttp__request_t 
                             // {
                             //     free(query_param_buf);
                             //     free(full_url_path);
-                            //     return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+                            //     return RANHTTP_REQUEST_PARSER_ERROR_INIT_FAILED;
                             // }
                             // strncpy(request->query_params[query_param_count].value, query_param_value_start, query_param_value_len);
                             // request->query_params[query_param_count].value[query_param_value_len] = '\0';
@@ -274,7 +274,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_header_string(ranhttp__req
         }
         request->headers[header_count].value = (char *)malloc(value_len + 1);
         if (!request->headers[header_count].value) {
-            return RANHTTP_REQUEST_PARSER_ERROR_INITIALIZE_FAILED;
+            return RANHTTP_REQUEST_PARSER_ERROR_INIT_FAILED;
         }
         strncpy(request->headers[header_count].value, value_start, value_len);
         request->headers[header_count].value[value_len] = '\0';
