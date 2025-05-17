@@ -270,7 +270,7 @@ ranhttp__request_parser_error_t ranhttp__request_read_header_string(ranhttp__req
         if (value_len <= 0) {
             return RANHTTP_REQUEST_PARSER_ERROR_INVALID_HEADER_STRING;
         } else if(value_len > request->limits.max_header_value_size) {
-            return RANHTTP_REQUEST_PARSER_ERROR_HEADER_VALUE_TOO_LONG;
+            return RANHTTP_REQUEST_PARSER_ERROR_HEADER_VALUE_TOO_BIG;
         }
         request->headers[header_count].value = (char *)malloc(value_len + 1);
         if (!request->headers[header_count].value) {
